@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools >= 59.6"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spot_bt"
+version = "0.1.0"
+authors = [
+  { name="Zahi Kakish", email="zmkakis@sandia.gov" },
+]
+description = "Behavior-tree package for Boston Dynamics' Spot robot."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: macOS :: Ubuntu",
+]
+dependencies = [
+    "aiortc",
+    "black",
+    "bosdyn-api==3.3.2",
+    "bosdyn-choreography-client==3.3.2",
+    "bosdyn-client==3.3.2",
+    "bosdyn-core==3.3.2",
+    "bosdyn-mission==3.3.2",
+    "numpy==1.24.1",
+    "opencv-python==4.5.*",
+    "Pillow",
+    "py_trees",
+    "scipy",
+]
+
+[project.scripts]
+spot_bt_arm_demo = "demo_arm:main"
+spot_bt_autonomy_demo = "demo_autonomy:main"
+spot_bt_fiducial_demo = "demo_fiducial:main"
+spot_bt_pose_demo = "demo_pose:main"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "w", "n"]
