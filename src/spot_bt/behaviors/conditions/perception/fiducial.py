@@ -1,4 +1,6 @@
 """Fiducial marker related conditions."""
+from __future__ import annotations
+
 import py_trees
 
 from spot_bt.data import Blackboards
@@ -38,7 +40,7 @@ class IsAnyFiducialMarkerDetected(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.FAILURE
 
         if not self.include_dock:
-            if len(self.fiducials) == 1 and int(self.dock_id) == self.fiducials.apriltag_properties.tag_id:
+            if len(self.fiducials) == 1 and int(self.dock_id) == self.fiducials[0].apriltag_properties.tag_id:
                 return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -46,7 +48,7 @@ class IsAnyFiducialMarkerDetected(py_trees.behaviour.Behaviour):
     def terminate(self, new_status: str):
         """Terminate condition and save information."""
         self.logger.debug(
-            f" {self.name} [IsAnyFiducialMarkerDetected::terminate().terminate()]" +
+            f" {self.name} [IsAnyFiducialMarkerDetected::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )
 
@@ -89,7 +91,7 @@ class IsDockFiducialMarkerDetected(py_trees.behaviour.Behaviour):
     def terminate(self, new_status: str):
         """Terminate condition and save information."""
         self.logger.debug(
-            f" {self.name} [IsDockFiducialMarkerDetected::terminate().terminate()]" +
+            f" {self.name} [IsDockFiducialMarkerDetected::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )
 
@@ -131,10 +133,9 @@ class IsSpecificFiducialMarkerDetected(py_trees.behaviour.Behaviour):
 
         return py_trees.common.Status.FAILURE
 
-
     def terminate(self, new_status: str):
         """Terminate condition and save information."""
         self.logger.debug(
-            f" {self.name} [IsSpecificFiducialMarkerDetected::terminate().terminate()]" +
+            f" {self.name} [IsSpecificFiducialMarkerDetected::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )

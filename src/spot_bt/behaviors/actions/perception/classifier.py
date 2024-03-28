@@ -1,9 +1,11 @@
 """ML Classifier related behaviors."""
+from __future__ import annotations
+
 import cv2
 
 import py_trees
 
-import torch
+# import torch
 
 from spot_bt.data import Blackboards
 
@@ -14,20 +16,20 @@ class ClassifyObjectsInImage(py_trees.behaviour.Behaviour):
         self.blackboard = Blackboards()
         self.classifications = []
         self.first_load = first_load
-        self.image = None
+        self.images = None
         self.path_to_model = path_to_model
         self.model = None
 
     def setup(self, **kwargs):
         """Setup model inference."""
         self.logger.debug(f"\t{self.name} [ClassifyObjectsInImage::setup()]")
-        try:
-            if self.first_load:
-                self.model = torch.load(self.path_to_model)
-        except FileNotFoundError as e:
-            self.logger.error(
-                f"{e.args} Could not find file in path {self.path_to_model}"
-            )
+        # try:
+            # if self.first_load:
+            #     self.model = torch.load(self.path_to_model)
+        # except FileNotFoundError as e:
+        #     self.logger.error(
+        #         f"{e.args} Could not find file in path {self.path_to_model}"
+        #     )
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
@@ -54,7 +56,7 @@ class ClassifyObjectsInImage(py_trees.behaviour.Behaviour):
                 output = self.model(image)
                 self.classifications.append(output)
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

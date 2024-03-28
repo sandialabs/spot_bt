@@ -1,4 +1,4 @@
-"""spot_bt Fiducial Movement Demonstration."""
+"""spot_bt Arm Demonstration."""
 from __future__ import annotations
 
 import os
@@ -6,26 +6,32 @@ import time
 
 import bosdyn.client
 import bosdyn.client.util
+from bosdyn.client.math_helpers import SE3Pose
 
 import py_trees
+from py_trees.composites import Sequence
 
-from spot_bt.data import Blackboards, Pose
-from spot_bt.behaviors.actions.movement import MoveToFiducial, RobotPose
-from spot_bt.composites.selector import create_generic_fiducial_selector, create_undock_selector
-from spot_bt.composites.sequence import create_dock_sequence
+from spot_bt.data import Blackboards
+from spot_bt.data import ArmPose, ArmPoses
+from spot_bt.behaviors.actions.general import RobotPowerOff, RobotPowerOn
+from spot_bt.behaviors.actions.arm import ArmStow, ArmUnstow
+from spot_bt.behaviors.actions.arm import CloseGripper, OpenGripper
+from spot_bt.behaviors.actions.arm import ArmTrajectories
 from spot_bt.tick import generic_pre_tick_handler
 
 
-def create_root() -> py_trees.composites.Sequence:
+def create_root() -> Sequence:
     """Create the root for the Autonomy capability."""
-    root = py_trees.composites.Sequence("DemoFiducial", memory=True)
+    root = Sequence("DemoArm", memory=True)
     root.add_children(
         [
-            create_undock_selector(),
-            RobotPose(name="Spot Pose"),
-            create_generic_fiducial_selector(),
-            MoveToFiducial(name="Move to Fiducial"),
-            create_dock_sequence(),
+            RobotPowerOn(name="power_on"),
+            ArmUnstow(name="unstow_arm"),
+            OpenGripper(name="open_gripper"),
+            ArmTrajectories(name="move_arm_to_postions"),
+            CloseGripper(name="close_gripper"),
+            ArmStow(name="stow_arm"),
+            RobotPowerOff(name="power_off"),
         ]
     )
     py_trees.display.render_dot_tree(root)
@@ -55,19 +61,29 @@ def main():
     blackboard.state.dock_id = 549
     blackboard.state.register_key(key="is_docked", access=py_trees.common.Access.WRITE)
     blackboard.state.is_docked = True
-    blackboard.state.register_key(key="pose", access=py_trees.common.Access.WRITE)
-    blackboard.state.pose = Pose()
-    blackboard.state.pose.set_pose(yaw=0.4, roll=0.0, pitch=0.0)
+    blackboard.state.register_key(
+        key="is_gripper_open", access=py_trees.common.Access.WRITE
+    )
+    blackboard.state.is_gripper_open = False
 
-    blackboard.perception = py_trees.blackboard.Client(name="Perception")
-    blackboard.perception.register_key(
-        key="fiducials", access=py_trees.common.Access.WRITE
-    )
-    blackboard.perception.fiducials = None
-    blackboard.perception.register_key(
-        key="world_objects", access=py_trees.common.Access.WRITE
-    )
-    blackboard.perception.world_objects = None
+    blackboard.arm = py_trees.blackboard.Client(name="Arm")
+    blackboard.arm.register_key(key="command", access=py_trees.common.Access.WRITE)
+    blackboard.arm.command = None
+    blackboard.arm.register_key(key="target", access=py_trees.common.Access.WRITE)
+    blackboard.arm.target = ArmPoses([
+        ArmPose(
+            SE3Pose(x=1.0, y=0.0, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
+            False,
+        ),
+        ArmPose(
+            SE3Pose(x=1.0, y=0.5, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
+            False,
+        ),
+        ArmPose(
+            SE3Pose(x=1.0, y=0.0, z=0.5, rot=[1.0, 0.0, 0.0, 0.0]),
+            False,
+        ),
+    ])
 
     # Create and execute behavior tree
     lease_client = robot.ensure_client(

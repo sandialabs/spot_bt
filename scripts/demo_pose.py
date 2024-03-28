@@ -9,32 +9,23 @@ import bosdyn.client.util
 import py_trees
 
 from spot_bt.data import Pose
-from spot_bt.behaviors.actions.general import ClaimLease
-from spot_bt.behaviors.actions.general import RobotDock
-from spot_bt.behaviors.actions.general import RobotPowerOff
-from spot_bt.behaviors.actions.general import RobotPowerOn
-from spot_bt.behaviors.actions.general import RobotUndock
+from spot_bt.composites.selector import create_undock_selector
+from spot_bt.composites.sequence import create_dock_sequence
 from spot_bt.behaviors.actions.movement import RobotPose
 
 
 def create_root() -> py_trees.composites.Sequence:
+    """Create the root for the Autonomy capability."""
     root = py_trees.composites.Sequence("DemoPose", memory=True)
-    claim_robot = ClaimLease(name="Claim Lease")
-    power_on_robot = RobotPowerOn(name="Power ON Spot")
-    undock_robot = RobotUndock(name="Undock Spot")
-    set_robot_pose = RobotPose(name="Spot Pose")
-    dock_robot = RobotDock(name="Dock Spot")
-    power_off_robot = RobotPowerOff(name="Power OFF Spot")
     root.add_children(
         [
-            claim_robot,
-            power_on_robot,
-            undock_robot,
-            set_robot_pose,
-            dock_robot,
-            power_off_robot,
+            create_undock_selector(),
+            RobotPose(name="Spot Pose"),
+            create_dock_sequence(),
         ]
     )
+    py_trees.display.render_dot_tree(root)
+
     return root
 
 
@@ -45,8 +36,7 @@ def main():
         raise ValueError(
             "The SPOT_IP environment variable was not set."
         )
-    else:
-        robot = sdk.create_robot(spot_ip)
+    robot = sdk.create_robot(spot_ip)
     bosdyn.client.util.authenticate(robot)
     robot.time_sync.wait_for_sync()
 
@@ -55,12 +45,14 @@ def main():
     py_trees.blackboard.Blackboard.enable_activity_stream(maximum_size=100)
     blackboard = py_trees.blackboard.Client(name="State")
     blackboard.register_key(key="robot", access=py_trees.common.Access.WRITE)
-    blackboard.register_key(key="pose", access=py_trees.common.Access.WRITE)
-    blackboard.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
     blackboard.robot = robot
+    blackboard.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
+    blackboard.dock_id = 549
+    blackboard.register_key(key="is_docked", access=py_trees.common.Access.WRITE)
+    blackboard.is_docked = True
+    blackboard.register_key(key="pose", access=py_trees.common.Access.WRITE)
     blackboard.pose = Pose()
     blackboard.pose.set_pose(yaw=0.4, roll=0.0, pitch=0.0)
-    blackboard.dock_id = 549
 
     # Create and execute behavior tree
     lease_client = robot.ensure_client(

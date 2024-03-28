@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bosdyn.api import image_pb2
 
 import cv2
@@ -7,7 +9,7 @@ from google.protobuf import wrappers_pb2
 import numpy as np
 
 
-DEPTH_CAMERA_OPTIONS = [
+DEPTH_CAMERA_OPTIONS: list[str] = [
     "frontleft_depth",
     "frontright_depth",
     "left_depth",
@@ -16,7 +18,7 @@ DEPTH_CAMERA_OPTIONS = [
 ]
 
 
-DEPTH_CAMERA_OPTIONS_WITH_ARM = [
+DEPTH_CAMERA_OPTIONS_WITH_ARM: list[str] = [
     "frontleft_depth",
     "frontright_depth",
     "left_depth",
@@ -26,7 +28,7 @@ DEPTH_CAMERA_OPTIONS_WITH_ARM = [
 ]
 
 
-PIXEL_FORMAT_ENUM_ENCODING_INFORMATION = {
+PIXEL_FORMAT_ENUM_ENCODING_INFORMATION: dict[int, tuple[type, int, str]] = {
     1: (np.uint8, 1, ".jpg"),
     3: (np.uint8, 3, ".jpg"),
     4: (np.uint8, 4, ".jpg"),
@@ -35,7 +37,7 @@ PIXEL_FORMAT_ENUM_ENCODING_INFORMATION = {
 }
 
 
-PIXEL_FORMAT_STRING_ENCODING_INFORMATION = {
+PIXEL_FORMAT_STRING_ENCODING_INFORMATION: dict[str, tuple[type, int, str]] = {
     "PIXEL_FORMAT_GREYSCALE_U8": (np.uint8, 1, ".jpg"),
     "PIXEL_FORMAT_RGB_U8": (np.uint8, 3, ".jpg"),
     "PIXEL_FORMAT_RGBA_U8": (np.uint8, 4, ".jpg"),
@@ -44,7 +46,7 @@ PIXEL_FORMAT_STRING_ENCODING_INFORMATION = {
 }
 
 
-IMAGE_CAMERA_OPTIONS = [
+IMAGE_CAMERA_OPTIONS: list[str] = [
     "frontleft_fisheye_image",
     "frontright_fisheye_image",
     "left_fisheye_image",
@@ -53,7 +55,7 @@ IMAGE_CAMERA_OPTIONS = [
 ]
 
 
-IMAGE_CAMERA_OPTIONS_WITH_ARM = [
+IMAGE_CAMERA_OPTIONS_WITH_ARM: list[str] = [
     "frontleft_fisheye_image",
     "frontright_fisheye_image",
     "left_fisheye_image",
@@ -63,7 +65,7 @@ IMAGE_CAMERA_OPTIONS_WITH_ARM = [
 ]
 
 
-IMAGE_ROTATION_ANGLES = {
+IMAGE_ROTATION_ANGLES: dict[str, float | int] = {
     "back_fisheye_image": 0,
     "frontleft_fisheye_image": -78,
     "frontright_fisheye_image": -102,
@@ -93,6 +95,8 @@ def find_center_pixel(polygon) -> tuple[int, int]:
 
 
 def get_bounding_box_image(response):
+    """Calculate and display bounding boxes for world objects in an image."""
+    # pylint: disable=no-member
     dtype = np.uint8
     img = np.fromstring(response.image_response.shot.image.data, dtype=dtype)
     if response.image_response.shot.image.format == image_pb2.Image.FORMAT_RAW:
@@ -131,7 +135,7 @@ def get_bounding_box_image(response):
 
 def get_encoding_for_pixel_format_string(
     pixel_format: str,
-) -> tuple[type, int, str]:
+) -> tuple[np.dtype, int, str]:
     """Return encoding information for specific pixel format string."""
     return PIXEL_FORMAT_STRING_ENCODING_INFORMATION[pixel_format]
 
@@ -143,9 +147,9 @@ def get_encoding_for_pixel_format_enum(pixel_format: int) -> tuple[type, int, st
 
 def pixel_format_type_strings() -> list[str]:
     """Return names of possible image pixel formats."""
-    return image_pb2.Image.PixelFormat.keys()[1:]
+    return image_pb2.Image.PixelFormat.keys()[1:]  # pylint: disable=no-member
 
 
 def pixel_format_string_to_enum(enum_string: str) -> int:
     """Convert pixel format string to respective enum."""
-    return dict(image_pb2.Image.PixelFormat.items()).get(enum_string)
+    return dict(image_pb2.Image.PixelFormat.items()).get(enum_string)  # pylint: disable=no-member

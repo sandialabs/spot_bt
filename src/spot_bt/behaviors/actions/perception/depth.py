@@ -1,21 +1,18 @@
-import cv2
+from __future__ import annotations
 
-from bosdyn.api import image_pb2
-from bosdyn.client.image import build_image_request
-from bosdyn.client.image import ImageClient
+from bosdyn.client.image import build_image_request, ImageClient
 
 import py_trees
 
 import numpy as np
 
-from scipy import ndimage
-
 from spot_bt.data import Blackboards
-from spot_bt.cameras import get_encoding_for_pixel_format_string
-from spot_bt.cameras import IMAGE_ROTATION_ANGLES
-from spot_bt.cameras import DEPTH_CAMERA_OPTIONS
-from spot_bt.cameras import DEPTH_CAMERA_OPTIONS_WITH_ARM
-from spot_bt.cameras import pixel_format_string_to_enum
+from spot_bt.cameras import (
+    get_encoding_for_pixel_format_string,
+    DEPTH_CAMERA_OPTIONS,
+    DEPTH_CAMERA_OPTIONS_WITH_ARM,
+    pixel_format_string_to_enum,
+)
 
 
 class SwitchDepthCamera(py_trees.behaviour.Behaviour):
@@ -28,6 +25,10 @@ class SwitchDepthCamera(py_trees.behaviour.Behaviour):
             self.image_sources = DEPTH_CAMERA_OPTIONS_WITH_ARM
         else:
             self.image_sources = DEPTH_CAMERA_OPTIONS
+
+    def setup(self, **kwargs):
+        """Setup SwitchDepthCamera behavior before initialization."""
+        self.logger.debug(f"  {self.name} [SwitchDepthCamera::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
@@ -56,9 +57,9 @@ class SwitchDepthCamera(py_trees.behaviour.Behaviour):
                     self.camera = self.image_sources[idx + 1]
 
             return py_trees.common.Status.SUCCESS
-        except:
-            return py_trees.common.Status.FAILURE
 
+        except:  # pylint: disable=bare-except
+            return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):
         """Terminate behavior and save information."""
@@ -84,6 +85,10 @@ class TakeDepthImage(py_trees.behaviour.Behaviour):
         self.image_source = image_source
         self.pixel_format = pixel_format_string_to_enum(pixel_format)
         self.encoding_data = get_encoding_for_pixel_format_string(pixel_format)
+
+    def setup(self, **kwargs):
+        """Setup TakeDepthImage behavior before initialization."""
+        self.logger.debug(f"  {self.name} [TakeDepthImage::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
@@ -121,7 +126,7 @@ class TakeDepthImage(py_trees.behaviour.Behaviour):
             # Save image
             self.image = cv_depth
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -153,6 +158,10 @@ class TakeDepthImageAllCameras(py_trees.behaviour.Behaviour):
             self.image_sources =DEPTH_CAMERA_OPTIONS_WITH_ARM
         else:
             self.image_sources = DEPTH_CAMERA_OPTIONS
+
+    def setup(self, **kwargs):
+        """Setup TakeDepthImageAllCameras behavior before initialization."""
+        self.logger.debug(f"  {self.name} [TakeDepthImageAllCameras::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""

@@ -5,8 +5,7 @@ import os
 import cv2
 
 from bosdyn.api import image_pb2
-from bosdyn.client.image import build_image_request
-from bosdyn.client.image import ImageClient
+from bosdyn.client.image import build_image_request, ImageClient
 
 import py_trees
 
@@ -15,11 +14,13 @@ import numpy as np
 from scipy import ndimage
 
 from spot_bt.data import Blackboards
-from spot_bt.cameras import get_encoding_for_pixel_format_string
-from spot_bt.cameras import IMAGE_ROTATION_ANGLES
-from spot_bt.cameras import IMAGE_CAMERA_OPTIONS
-from spot_bt.cameras import IMAGE_CAMERA_OPTIONS_WITH_ARM
-from spot_bt.cameras import pixel_format_string_to_enum
+from spot_bt.cameras import (
+    get_encoding_for_pixel_format_string,
+    IMAGE_ROTATION_ANGLES,
+    IMAGE_CAMERA_OPTIONS,
+    IMAGE_CAMERA_OPTIONS_WITH_ARM,
+    pixel_format_string_to_enum,
+)
 
 
 class SwitchCamera(py_trees.behaviour.Behaviour):
@@ -31,6 +32,10 @@ class SwitchCamera(py_trees.behaviour.Behaviour):
             self.image_sources = IMAGE_CAMERA_OPTIONS_WITH_ARM
         else:
             self.image_sources = IMAGE_CAMERA_OPTIONS
+
+    def setup(self, **kwargs):
+        """Setup SwitchCamera behavior before initialization."""
+        self.logger.debug(f"  {self.name} [SwitchCamera::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
@@ -55,7 +60,8 @@ class SwitchCamera(py_trees.behaviour.Behaviour):
                     self.camera = self.image_sources[idx + 1]
 
             return py_trees.common.Status.SUCCESS
-        except:
+
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
 
@@ -83,6 +89,10 @@ class TakeImage(py_trees.behaviour.Behaviour):
         self.pixel_format = pixel_format_string_to_enum(pixel_format)
         self.encoding_data = get_encoding_for_pixel_format_string(pixel_format)
 
+    def setup(self, **kwargs):
+        """Setup TakeImage behavior before initialization."""
+        self.logger.debug(f"  {self.name} [TakeImage::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [TakeImage::initialise()]")
@@ -104,6 +114,7 @@ class TakeImage(py_trees.behaviour.Behaviour):
 
     def update(self) -> py_trees.common.Status:
         """Run the TakeImage behavior when ticked."""
+        # pylint: disable=no-member
         self.logger.debug(f"  {self.name} [TakeImage::update()]")
         try:
             image_request = [
@@ -138,7 +149,7 @@ class TakeImage(py_trees.behaviour.Behaviour):
             self.image = img
             cv2.imwrite(f"{os.getcwd()}/test_{self.image_source}{extension}", img)
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -171,6 +182,10 @@ class TakeImageAllCameras(py_trees.behaviour.Behaviour):
         else:
             self.image_sources = IMAGE_CAMERA_OPTIONS
 
+    def setup(self, **kwargs):
+        """Setup TakeImageAllCameras behavior before initialization."""
+        self.logger.debug(f"  {self.name} [TakeImageAllCameras::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [TakeImageAllCameras::initialise()]")
@@ -187,6 +202,7 @@ class TakeImageAllCameras(py_trees.behaviour.Behaviour):
 
     def update(self) -> py_trees.common.Status:
         """Run the TakeImageAllCameras behavior when ticked."""
+        # pylint: disable=no-member
         self.logger.debug(f"  {self.name} [TakeImageAllCameras::update()]")
         try:
             self.images = []
@@ -225,7 +241,7 @@ class TakeImageAllCameras(py_trees.behaviour.Behaviour):
                 self.images.append(img)
                 cv2.imwrite(f"{os.getcwd()}/test_{source}{extension}", img)
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

@@ -1,4 +1,6 @@
 """Robot Pose related behaviors"""
+from __future__ import annotations
+
 import time
 
 from bosdyn.client.robot_command import RobotCommandClient
@@ -42,13 +44,12 @@ class RobotPose(py_trees.behaviour.Behaviour):
         self.logger.debug(f"  {self.name} [RobotPose::update()]")
         try:
             assert self.robot.is_powered_on(), "Robot power on failed."
-
             cmd = self.pose.create_command()
             self.client.robot_command(cmd)
             self.pose.mark()
             time.sleep(3)
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -57,6 +58,6 @@ class RobotPose(py_trees.behaviour.Behaviour):
         """Terminate behavior and save information."""
         self.blackboard.state.pose = self.pose
         self.logger.debug(
-            f" {self.name} [RobotPose::terminate().terminate()]" +
+            f" {self.name} [RobotPose::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )

@@ -1,6 +1,10 @@
-from bosdyn.client.robot_command import block_until_arm_arrives
-from bosdyn.client.robot_command import RobotCommandBuilder
-from bosdyn.client.robot_command import RobotCommandClient
+from __future__ import annotations
+
+from bosdyn.client.robot_command import (
+    block_until_arm_arrives,
+    RobotCommandBuilder,
+    RobotCommandClient,
+)
 
 import py_trees
 
@@ -25,6 +29,9 @@ class CloseGripper(py_trees.behaviour.Behaviour):
         self.blackboard.state.register_key(
             key="robot", access=py_trees.common.Access.WRITE
         )
+        self.blackboard.state.register_key(
+            key="is_gripper_open", access=py_trees.common.Access.WRITE
+        )
         self.robot = self.blackboard.state.robot
         self.client = self.robot.ensure_client(RobotCommandClient.default_service_name)
 
@@ -39,9 +46,11 @@ class CloseGripper(py_trees.behaviour.Behaviour):
             command_id = self.client.robot_command(command)
             timeout = 3.0
 
-            self.robot.logger.info("Close gripper command issued.")
+            self.logger.info("Close gripper command issued.")
             block_until_arm_arrives(self.client, command_id, timeout)
-        except:
+            self.blackboard.state.is_gripper_open = False
+            return py_trees.common.Status.SUCCESS
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):
@@ -70,6 +79,9 @@ class OpenGripper(py_trees.behaviour.Behaviour):
         self.blackboard.state.register_key(
             key="robot", access=py_trees.common.Access.WRITE
         )
+        self.blackboard.state.register_key(
+            key="is_gripper_open", access=py_trees.common.Access.WRITE
+        )
         self.robot = self.blackboard.state.robot
         self.client = self.robot.ensure_client(RobotCommandClient.default_service_name)
 
@@ -85,9 +97,11 @@ class OpenGripper(py_trees.behaviour.Behaviour):
             command_id = self.client.robot_command(command)
             timeout = 3.0
 
-            self.robot.logger.info("Open gripper command issued.")
+            self.logger.info("Open gripper command issued.")
             block_until_arm_arrives(self.client, command_id, timeout)
-        except:
+            self.blackboard.state.is_gripper_open = True
+            return py_trees.common.Status.SUCCESS
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):

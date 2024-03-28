@@ -1,4 +1,6 @@
 """Robot power function related behaviors"""
+from __future__ import annotations
+
 import py_trees
 
 from spot_bt.data import Blackboards
@@ -11,6 +13,10 @@ class RobotPowerOn(py_trees.behaviour.Behaviour):
         super().__init__(name)
         self.blackboard = Blackboards()
         self.robot = None
+
+    def setup(self, **kwargs):
+        """Setup RobotPowerOn behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotPowerOn::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
@@ -27,7 +33,7 @@ class RobotPowerOn(py_trees.behaviour.Behaviour):
         try:
             self.robot.power_on(timeout_sec=20)
             assert self.robot.is_powered_on(), "Robot power on failed!"
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -48,6 +54,10 @@ class RobotPowerOff(py_trees.behaviour.Behaviour):
         self.blackboard = Blackboards()
         self.robot = None
 
+    def setup(self, **kwargs):
+        """Setup RobotPowerOff behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotPowerOff::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [RobotPose::initialise()]")
@@ -63,7 +73,7 @@ class RobotPowerOff(py_trees.behaviour.Behaviour):
         try:
             self.robot.power_off(cut_immediately=False, timeout_sec=20)
             assert not self.robot.is_powered_on(), "Robot power off failed!"
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

@@ -1,4 +1,5 @@
-from bosdyn.api import world_object_pb2
+from __future__ import annotations
+
 from bosdyn.client.world_object import WorldObjectClient
 
 import py_trees
@@ -50,7 +51,7 @@ class DetectWorldObjects(py_trees.behaviour.Behaviour):
                         f"Child frame name: {edge}. Parent frame name: "
                         f"{full_snapshot.child_to_parent_edge_map[edge].parent_frame_name}"
                     )
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

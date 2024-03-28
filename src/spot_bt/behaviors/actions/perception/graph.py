@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import os
 
 from bosdyn.client.graph_nav import GraphNavClient
 from bosdyn.client.map_processing import MapProcessingServiceClient
-from bosdyn.client.recording import GraphNavRecordingServiceClient
-from bosdyn.client.recording import NotReadyYetError
+from bosdyn.client.recording import GraphNavRecordingServiceClient, NotReadyYetError
 
 import py_trees
 
@@ -90,7 +91,7 @@ class StartRecordingGraph(py_trees.behaviour.Behaviour):
             self.logger.debug(f"  {status}")
             return py_trees.common.Status.SUCCESS
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):
@@ -101,7 +102,7 @@ class StartRecordingGraph(py_trees.behaviour.Behaviour):
         self.blackboard.graph.map_processing_client = self.map_processing_client
         self.logger.debug(
             f" {self.name} [StartRecordingGraph::terminate().terminate()]"
-            + f"[{self.status}->{new_status}]"
+            f"[{self.status}->{new_status}]"
         )
 
 
@@ -143,7 +144,7 @@ class StopRecordingGraph(py_trees.behaviour.Behaviour):
         except NotReadyYetError:
             return py_trees.common.Status.RUNNING
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):
@@ -151,7 +152,7 @@ class StopRecordingGraph(py_trees.behaviour.Behaviour):
         self.blackboard.graph.recording_client = self.recording_client
         self.logger.debug(
             f" {self.name} [StartRecordingGraph::terminate().terminate()]"
-            + f"[{self.status}->{new_status}]"
+            f"[{self.status}->{new_status}]"
         )
 
 
@@ -218,7 +219,7 @@ class DownloadGraph(py_trees.behaviour.Behaviour):
         self.blackboard.graph.graph_nav_client = self.graph_nav_client
         self.logger.debug(
             f" {self.name} [DownloadGraph::terminate().terminate()]"
-            + f"[{self.status}->{new_status}]"
+            f"[{self.status}->{new_status}]"
         )
 
 
@@ -264,5 +265,5 @@ class OptimizeAnchoring(py_trees.behaviour.Behaviour):
         """Terminate behavior and save information."""
         self.logger.debug(
             f" {self.name} [OptimizeAnchoring::terminate().terminate()]"
-            + f"[{self.status}->{new_status}]"
+            f"[{self.status}->{new_status}]"
         )

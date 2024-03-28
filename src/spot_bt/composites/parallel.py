@@ -1,1 +1,1 @@
-"""Spot Inspecta Parallel composites."""
+"""spot_bt Parallel composites."""

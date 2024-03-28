@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bosdyn.client.recording import GraphNavRecordingServiceClient
 
 import py_trees
@@ -14,7 +16,7 @@ class IsGraphRecording(py_trees.behaviour.Behaviour):
         self.robot = None
         self.recording_client = None
 
-    def setup(self):
+    def setup(self, **kwargs):
         """Setup the Graph Recording."""
         self.logger.debug(f"\t{self.name} [IsGraphRecording::setup()]")
 

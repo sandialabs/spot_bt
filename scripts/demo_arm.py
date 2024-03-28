@@ -9,38 +9,32 @@ import bosdyn.client.util
 from bosdyn.client.math_helpers import SE3Pose
 
 import py_trees
+from py_trees.composites import Sequence
 
 from spot_bt.data import Blackboards
 from spot_bt.data import ArmPose, ArmPoses
-from spot_bt.behaviors.actions.general import ClaimLease, RobotPowerOff, RobotPowerOn
 from spot_bt.behaviors.actions.arm import ArmStow, ArmUnstow
 from spot_bt.behaviors.actions.arm import CloseGripper, OpenGripper
-from spot_bt.behaviors.actions.arm import ArmTrajectory, ArmTrajectories
+from spot_bt.behaviors.actions.arm import ArmTrajectories
+from spot_bt.composites.selector import create_undock_selector
 from spot_bt.composites.sequence import create_dock_sequence
-from spot_bt.composites.sequence import create_undock_sequence
 from spot_bt.tick import generic_pre_tick_handler
 
 
-
-def create_root() -> py_trees.composites.Sequence:
+def create_root() -> Sequence:
     """Create the root for the Autonomy capability."""
-    root = py_trees.composites.Sequence("DemoArm", memory=True)
-
-    root.add_child(create_undock_sequence())
+    root = Sequence("DemoArm", memory=True)
     root.add_children(
         [
-            ClaimLease(name="claim_lease"),
-            RobotPowerOn(name="power_on"),
+            create_undock_selector(),
             ArmUnstow(name="unstow_arm"),
-            # ArmTrajectory(name="move_arm_to_postion"),
-            ArmTrajectories(name="move_arm_to_postions"),
             OpenGripper(name="open_gripper"),
+            ArmTrajectories(name="move_arm_to_postions"),
             CloseGripper(name="close_gripper"),
             ArmStow(name="stow_arm"),
-            RobotPowerOff(name="power_off"),
+            create_dock_sequence(),
         ]
     )
-    root.add_child(create_dock_sequence())
 
     py_trees.display.render_dot_tree(root)
 
@@ -54,8 +48,7 @@ def main():
         raise ValueError(
             "The SPOT_IP environment variable was not set."
         )
-    else:
-        robot = sdk.create_robot(spot_ip)
+    robot = sdk.create_robot(spot_ip)
     bosdyn.client.util.authenticate(robot)
     robot.time_sync.wait_for_sync()
 
@@ -65,32 +58,34 @@ def main():
     blackboard = Blackboards()
     blackboard.state = py_trees.blackboard.Client(name="State")
     blackboard.state.register_key(key="robot", access=py_trees.common.Access.WRITE)
-    blackboard.state.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
-    blackboard.state.register_key(key="pose", access=py_trees.common.Access.WRITE)
     blackboard.state.robot = robot
+    blackboard.state.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
     blackboard.state.dock_id = 549
+    blackboard.state.register_key(key="is_docked", access=py_trees.common.Access.WRITE)
+    blackboard.state.is_docked = True
+    blackboard.state.register_key(
+        key="is_gripper_open", access=py_trees.common.Access.WRITE
+    )
+    blackboard.state.is_gripper_open = False
+
     blackboard.arm = py_trees.blackboard.Client(name="Arm")
-    blackboard.arm.register_key(key="target", access=py_trees.common.Access.WRITE)
     blackboard.arm.register_key(key="command", access=py_trees.common.Access.WRITE)
-    # blackboard.arm.target = ArmPose(
-    #     SE3Pose(x=1.0, y=0.0, z=0.5, rot=[1.0, 0.0, 0.0, 0.0]),
-    #     False,
-    # )
+    blackboard.arm.command = None
+    blackboard.arm.register_key(key="target", access=py_trees.common.Access.WRITE)
     blackboard.arm.target = ArmPoses([
         ArmPose(
-            SE3Pose(x=1.0, y=0.0, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
+            SE3Pose(x=0.9, y=0.0, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
             False,
         ),
         ArmPose(
-            SE3Pose(x=1.0, y=0.5, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
+            SE3Pose(x=0.9, y=0.5, z=0.0, rot=[1.0, 0.0, 0.0, 0.0]),
             False,
         ),
         ArmPose(
-            SE3Pose(x=1.0, y=0.0, z=0.5, rot=[1.0, 0.0, 0.0, 0.0]),
+            SE3Pose(x=0.9, y=0.0, z=0.5, rot=[1.0, 0.0, 0.0, 0.0]),
             False,
         ),
     ])
-    blackboard.arm.command = None
 
     # Create and execute behavior tree
     lease_client = robot.ensure_client(

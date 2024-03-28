@@ -1,19 +1,17 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from bosdyn.api import arm_command_pb2
-from bosdyn.api import geometry_pb2
-from bosdyn.api import synchronized_command_pb2
-from bosdyn.api import trajectory_pb2
+from dataclasses import dataclass, field
+
+from bosdyn.api import (
+    arm_command_pb2,
+    geometry_pb2,
+    synchronized_command_pb2,
+    trajectory_pb2,
+)
 from bosdyn.api.spot import robot_command_pb2
-from bosdyn.client.frame_helpers import get_a_tform_b
-from bosdyn.client.frame_helpers import get_se2_a_tform_b
-from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME
-from bosdyn.client.frame_helpers import ODOM_FRAME_NAME
-from bosdyn.client.frame_helpers import VISION_FRAME_NAME
-from bosdyn.client.math_helpers import Quat
-from bosdyn.client.math_helpers import SE2Pose
-from bosdyn.client.math_helpers import SE3Pose
-from bosdyn.client.math_helpers import Vec3
+from bosdyn.client.frame_helpers import get_a_tform_b, get_se2_a_tform_b
+from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME, VISION_FRAME_NAME
+from bosdyn.client.math_helpers import Quat, SE2Pose, SE3Pose, Vec3
 from bosdyn.client.robot_command import RobotCommandBuilder
 from bosdyn.geometry import EulerZXY
 from bosdyn.util import seconds_to_duration
@@ -27,24 +25,28 @@ import py_trees
 class Blackboards:
     """Dataclass for various BT Blackboards related to spot_inspecta."""
 
-    state: py_trees.blackboard.Client | None = None
-    arm: py_trees.blackboard.Client | None = None
-    graph: py_trees.blackboard.Client | None = None
-    perception: py_trees.blackboard.Client | None = None
-    ins: py_trees.blackboard.Client | None = None
+    state: py_trees.blackboard.Client | None = field(default=None)
+    arm: py_trees.blackboard.Client | None = field(default=None)
+    graph: py_trees.blackboard.Client | None = field(default=None)
+    perception: py_trees.blackboard.Client | None = field(default=None)
+    ins: py_trees.blackboard.Client | None = field(default=None)
 
 
 @dataclass
 class Pose:
     """Dataclass for pose in free space, composed of position and orientation."""
 
-    position: geometry_pb2.Vec3 = geometry_pb2.Vec3(x=0.0, y=0.0, z=0.0)
-    orientation: geometry_pb2.Quaternion = geometry_pb2.Quaternion(
-        w=0.0, x=0.0, y=0.0, z=0.0
+    position: geometry_pb2.Vec3 = field(
+        default_factory=lambda: geometry_pb2.Vec3(x=0.0, y=0.0, z=0.0)
     )
-    pose: EulerZXY = EulerZXY(yaw=0.0, roll=0.0, pitch=0.0)
-    body_height: float = 0.0
-    is_done: bool = False
+    orientation: geometry_pb2.Quaternion = field(
+        default_factory=lambda: geometry_pb2.Quaternion(
+            w=0.0, x=0.0, y=0.0, z=0.0
+        )
+    )
+    pose: EulerZXY = field(default_factory=lambda: EulerZXY(yaw=0.0, roll=0.0, pitch=0.0))
+    body_height: float = field(default=0.0)
+    is_done: bool = field(default=False)
 
     def as_list(self) -> list[float | int]:
         """Get values as a Python List."""
@@ -112,10 +114,10 @@ class Pose:
 class Movement:
     """Dataclass for movement in free space."""
 
-    v_x: float = 0.0
-    v_y: float = 0.0
-    v_rot: float = 0.0
-    is_done: bool = False
+    v_x: float = field(default=0.0)
+    v_y: float = field(default=0.0)
+    v_rot: float = field(default=0.0)
+    is_done: bool = field(default=False)
 
     def as_list(self) -> list[float | int]:
         """Get values as a Python List."""
@@ -151,7 +153,9 @@ class Movement:
 class BodyTrajectory:
     """Dataclass for a Spot movement trajectory."""
 
-    pose: SE2Pose | SE3Pose = SE3Pose(x=0.0, y=0.0, z=0.0, rot=0.0)
+    pose: SE2Pose | SE3Pose = field(
+        default_factory=lambda: SE3Pose(x=0.0, y=0.0, z=0.0, rot=0.0)
+    )
 
     def mark(self):
         """Set that the pose stored has been completed."""
@@ -175,8 +179,10 @@ class BodyTrajectory:
         """Create an in-place rotation trajectory to pass to the client."""
         # if isinstance(self.pose, SE3Pose):
         #     raise TypeError("Rotations require use of SE2Pose not SE3Pose")
-        if frame_type in ["odom", "vision"]:
-            frame = ODOM_FRAME_NAME if frame_type == "odom" else VISION_FRAME_NAME
+        if frame_type not in ["odom", "vision"]:
+            frame = VISION_FRAME_NAME
+        else:
+            frame = frame_type
 
         body_tform_goal = SE2Pose(x=0.0, y=0.0, angle=angle)
         frame_tform_body = get_se2_a_tform_b(
@@ -230,8 +236,8 @@ class BodyTrajectory:
 class ArmPose:
     """Dataclass for a single Spot Arm Pose."""
 
-    pose: SE3Pose = SE3Pose(x=0.0, y=0.0, z=0.0, rot=Quat())
-    is_done: bool = False
+    pose: SE3Pose = field(default_factory=lambda: SE3Pose(x=0.0, y=0.0, z=0.0, rot=Quat()))
+    is_done: bool = field(default=False)
 
     def hand_pose(self) -> geometry_pb2.Vec3:
         """Get the hand pose relative to target."""
@@ -250,8 +256,10 @@ class ArmPose:
 class ArmPoses:
     """Dataclass for multiple poses that constitute a Spot/Arm trajectory."""
 
-    poses: list[SE3Pose | ArmPose] = SE3Pose(x=0.0, y=0.0, z=0.0, rot=Quat())
-    is_done: bool = False
+    poses: list[SE3Pose | ArmPose] = field(
+        default_factory=lambda: SE3Pose(x=0.0, y=0.0, z=0.0, rot=Quat())
+    )
+    is_done: bool = field(default=False)
 
     def mark(self):
         """Set that the pose stored has been completed."""
@@ -281,6 +289,7 @@ class ArmPoses:
         self, seconds: int = 2, gripper_open_fraction: float = 0.0
     ) -> RobotCommandBuilder:
         """Create an arm trajectory command to pass to client."""
+        # pylint: disable=no-member
         trajectories = []
         for pose in self.poses:
             trajectories.append(

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bosdyn.api import world_object_pb2
 from bosdyn.client.world_object import WorldObjectClient
 
@@ -16,6 +18,10 @@ class DetectFiducialMarkers(py_trees.behaviour.Behaviour):
             None  # google.protobuf.pyext._message.RepeatedCompositeContainer
         )
 
+    def setup(self, **kwargs):
+        """Setup DetectFiducialMarkers behavior before initialization."""
+        self.logger.debug(f"  {self.name} [DetectFiducialMarkers::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [DetectFiducialMarkers::initialise()]")
@@ -33,14 +39,10 @@ class DetectFiducialMarkers(py_trees.behaviour.Behaviour):
     def update(self) -> py_trees.common.Status:
         """Run the TakeImage behavior when ticked."""
         self.logger.debug(f"  {self.name} [DetectFiducialMarkers::update()]")
-        try:
-            request_fiducials = [world_object_pb2.WORLD_OBJECT_APRILTAG]
-            self.fiducials = self.client.list_world_objects(
-                object_type=request_fiducials
-            ).world_objects
-            print(self.fiducials)
-        except:
-            return py_trees.common.Status.FAILURE
+        request_fiducials = [world_object_pb2.WORLD_OBJECT_APRILTAG]
+        self.fiducials = self.client.list_world_objects(
+            object_type=request_fiducials
+        ).world_objects
 
         return py_trees.common.Status.SUCCESS
 

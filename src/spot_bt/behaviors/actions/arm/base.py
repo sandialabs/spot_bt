@@ -1,6 +1,10 @@
-from bosdyn.client.robot_command import block_until_arm_arrives
-from bosdyn.client.robot_command import RobotCommandBuilder
-from bosdyn.client.robot_command import RobotCommandClient
+from __future__ import annotations
+
+from bosdyn.client.robot_command import (
+    block_until_arm_arrives,
+    RobotCommandBuilder,
+    RobotCommandClient,
+)
 
 import py_trees
 
@@ -43,9 +47,9 @@ class ArmStow(py_trees.behaviour.Behaviour):
             stow_command_id = self.client.robot_command(stow)
             timeout = 3.0
 
-            self.robot.logger.info("Stow command issued.")
+            self.logger.info("Stow command issued.")
             block_until_arm_arrives(self.client, stow_command_id, timeout)
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -93,9 +97,9 @@ class ArmUnstow(py_trees.behaviour.Behaviour):
             timeout = 3.0
 
             # Blocks until arm achieves a finishing state for specific command
-            self.robot.logger.info("Unstow command issued.")
+            self.logger.info("Unstow command issued.")
             block_until_arm_arrives(self.client, unstow_command_id, timeout)
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

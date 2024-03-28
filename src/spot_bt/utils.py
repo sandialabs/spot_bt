@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from bosdyn import geometry
-from bosdyn.api import geometry_pb2
-from bosdyn.api import trajectory_pb2
+from bosdyn.api import geometry_pb2, trajectory_pb2
 from bosdyn.api.spot import robot_command_pb2
 from bosdyn.client.math_helpers import Quat
 
@@ -20,7 +21,7 @@ def get_default_mobility_parameters(
     y_velocity_limit: float = 0.5,
     angular_velocity_limit: float = 1.0,
 ) -> robot_command_pb2.MobilityParams:
-    """Something."""
+    """Generate default mobility parameters for Spot motion."""
     obstacles = robot_command_pb2.ObstacleParams(
         disable_vision_body_obstacle_avoidance=True,
         disable_vision_foot_obstacle_avoidance=True,

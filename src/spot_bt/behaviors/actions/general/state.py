@@ -1,4 +1,6 @@
 """Robot state related behaviors."""
+from __future__ import annotations
+
 from bosdyn.client.robot_state import RobotStateClient
 
 import py_trees
@@ -19,6 +21,10 @@ class RobotState(py_trees.behaviour.Behaviour):
         self.state = None
         self.option = "state"
 
+    def setup(self, **kwargs):
+        """Setup RobotState behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotState::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [RobotState::initialise()]")
@@ -38,10 +44,10 @@ class RobotState(py_trees.behaviour.Behaviour):
         if self.option == "hardware":
             self.state = self.client.get_hardware_config_with_link_info()
             return py_trees.common.Status.SUCCESS
-        elif self.option == "metrics":
+        if self.option == "metrics":
             self.state = self.client.get_robot_metrics()
             return py_trees.common.Status.SUCCESS
-        elif self.option == "state":
+        if self.option == "state":
             self.state = self.client.get_robot_state()
             return py_trees.common.Status.SUCCESS
 
@@ -70,6 +76,10 @@ class RobotStateAsync(py_trees.behaviour.Behaviour):
         self.check = None
         self.option = "state"
 
+    def setup(self, **kwargs):
+        """Setup RobotStateAsync behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotStateAsync::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [RobotStateAsync::initialise()]")
@@ -97,9 +107,9 @@ class RobotStateAsync(py_trees.behaviour.Behaviour):
 
             if not self.check.done():
                 return py_trees.common.Status.RUNNING
-            else:
-                self.state = self.check.results()
-                return py_trees.common.Status.SUCCESS
+
+            self.state = self.check.results()
+            return py_trees.common.Status.SUCCESS
 
         except KeyError:
             return py_trees.common.Status.FAILURE
@@ -120,6 +130,10 @@ class FinishAutonomy(py_trees.behaviour.Behaviour):
         super().__init__(name)
         self.blackboard = Blackboards()
         self.finished = None
+
+    def setup(self, **kwargs):
+        """Setup FinishAutonomy behavior before initialization."""
+        self.logger.debug(f"  {self.name} [FinishAutonomy::setup()]")
 
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""

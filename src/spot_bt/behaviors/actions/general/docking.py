@@ -1,7 +1,7 @@
-from bosdyn.client.docking import blocking_dock_robot
-from bosdyn.client.docking import blocking_undock
-from bosdyn.client.robot_command import blocking_stand
-from bosdyn.client.robot_command import RobotCommandClient
+from __future__ import annotations
+
+from bosdyn.client.docking import blocking_dock_robot, blocking_undock
+from bosdyn.client.robot_command import blocking_stand, RobotCommandClient
 
 import py_trees
 
@@ -16,6 +16,10 @@ class RobotDock(py_trees.behaviour.Behaviour):
         self.client = None
         self.dock_id = None
 
+    def setup(self, **kwargs):
+        """Setup RobotDock behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotDock::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [RobotDock::initialise()]")
@@ -25,6 +29,9 @@ class RobotDock(py_trees.behaviour.Behaviour):
         )
         self.blackboard.state.register_key(
             key="dock_id", access=py_trees.common.Access.READ
+        )
+        self.blackboard.state.register_key(
+            key="is_docked", access=py_trees.common.Access.WRITE
         )
         self.robot = self.blackboard.state.robot
         self.client = self.robot.ensure_client(RobotCommandClient.default_service_name)
@@ -37,9 +44,10 @@ class RobotDock(py_trees.behaviour.Behaviour):
             # NOTE: Make sure the robot is powered on first!
             blocking_stand(self.client)
             blocking_dock_robot(self.robot, self.dock_id)
-            self.logger.debug("\t\tROBOT DOCKED!")
-        except:
-            self.logger.debug("\t\tROBOT FAILED TO DOCK!")
+            self.blackboard.state.is_docked = True
+            self.logger.debug("\t\tRobot Docked!")
+        except:  # pylint: disable=bare-except
+            self.logger.debug("\t\tRobot Failed to Dock!")
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS
@@ -59,12 +67,19 @@ class RobotUndock(py_trees.behaviour.Behaviour):
         self.robot = None
         self.dock_id = None
 
+    def setup(self, **kwargs):
+        """Setup RobotUndock behavior before initialization."""
+        self.logger.debug(f"  {self.name} [RobotUndock::setup()]")
+
     def initialise(self):
         """Initialize robot object and client for behavior on first tick."""
         self.logger.debug(f"  {self.name} [RobotUndock::initialise()]")
-        self.blackboard.state = self.attach_blackboard_client("Spot State")
+        self.blackboard.state = self.attach_blackboard_client("State")
         self.blackboard.state.register_key(
             key="robot", access=py_trees.common.Access.WRITE
+        )
+        self.blackboard.state.register_key(
+            key="is_docked", access=py_trees.common.Access.WRITE
         )
         self.robot = self.blackboard.state.robot
 
@@ -74,9 +89,10 @@ class RobotUndock(py_trees.behaviour.Behaviour):
         try:
             # NOTE: Make sure the robot is powered on first!
             blocking_undock(self.robot)
-            self.logger.debug("\t\tROBOT UNDOCKED!")
-        except:
-            self.logger.debug("\t\tROBOT FAILED TO UNDOCK!")
+            self.blackboard.state.is_docked = False
+            self.logger.debug("\t\tRobot Undocked!")
+        except:  # pylint: disable=bare-except
+            self.logger.debug("\t\tRobot Failed to Undock!")
             return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.SUCCESS

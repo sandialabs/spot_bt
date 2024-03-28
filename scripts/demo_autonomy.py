@@ -9,53 +9,36 @@ import bosdyn.client.util
 
 import py_trees
 
-from spot_bt.data import Blackboards
-from spot_bt.data import Pose
+from spot_bt.data import Blackboards, Pose
 from spot_bt.behaviors.actions.general import RobotState
-from spot_bt.behaviors.actions.movement import MoveToFiducial
-from spot_bt.behaviors.actions.movement import RobotPose
-from spot_bt.behaviors.actions.movement import TurnInPlace
-from spot_bt.behaviors.actions.perception import DetectFiducialMarkers
-from spot_bt.behaviors.actions.perception import DetectWorldObjects
-from spot_bt.composites.selector import create_generic_fiducial_selector
+from spot_bt.behaviors.actions.movement import MoveToFiducial, RobotPose, TurnInPlace
+from spot_bt.behaviors.actions.perception import DetectFiducialMarkers, DetectWorldObjects
+from spot_bt.composites.selector import create_generic_fiducial_selector, create_undock_selector
 from spot_bt.composites.sequence import create_dock_sequence
-from spot_bt.composites.sequence import create_undock_sequence
 from spot_bt.tick import generic_pre_tick_handler
 
 
 def create_root() -> py_trees.composites.Sequence:
     """Create the root for the Autonomy capability."""
     root = py_trees.composites.Sequence("DemoAutonomy", memory=True)
-    get_robot_state = RobotState(name="Get Spot State")
-    set_robot_pose = RobotPose(name="Set Spot Pose")
-    turn_90_0 = TurnInPlace("Turn   0 ->  90")
-    turn_90_1 = TurnInPlace("Turn  90 -> 180")
-    turn_90_2 = TurnInPlace("Turn 180 -> 270")
-    turn_90_3 = TurnInPlace("Turn 270 -> 360")
-    detect_objects = DetectWorldObjects(name="Detect World Objects")
-    detect_fiducials = DetectFiducialMarkers(name="Detect Fiducials")
-
-    root.add_child(create_undock_sequence())
     root.add_children(
         [
-            get_robot_state,
-            set_robot_pose,
-            turn_90_0,
-            turn_90_1,
-            turn_90_2,
-            turn_90_3,
-            detect_objects,
-            detect_fiducials,
-        ]
-    )
-    root.add_child(create_generic_fiducial_selector())
-    root.add_children(
-        [
+            create_undock_selector(),
+            RobotState(name="Get Spot State"),
+            RobotPose(name="Set Spot Pose"),
+            TurnInPlace("Turn   0 ->  90"),
+            TurnInPlace("Turn  90 -> 180"),
+            TurnInPlace("Turn 180 -> 270"),
+            TurnInPlace("Turn 270 -> 360"),
+            DetectWorldObjects(name="Detect World Objects"),
+            DetectFiducialMarkers(name="Detect Fiducials"),
+            create_generic_fiducial_selector(),
             RobotState(name="Get Spot State"),
             MoveToFiducial(name="Move to Fiducial"),
+            create_dock_sequence(),
         ]
     )
-    root.add_child(create_dock_sequence())
+    py_trees.display.render_dot_tree(root)
 
     return root
 
@@ -79,20 +62,23 @@ def main():
     blackboard = Blackboards()
     blackboard.state = py_trees.blackboard.Client(name="State")
     blackboard.state.register_key(key="robot", access=py_trees.common.Access.WRITE)
-    blackboard.state.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
-    blackboard.state.register_key(key="pose", access=py_trees.common.Access.WRITE)
     blackboard.state.robot = robot
+    blackboard.state.register_key(key="dock_id", access=py_trees.common.Access.WRITE)
     blackboard.state.dock_id = 549
+    blackboard.state.register_key(key="pose", access=py_trees.common.Access.WRITE)
     blackboard.state.pose = Pose()
     blackboard.state.pose.set_pose(yaw=0.4, roll=0.0, pitch=0.0)
+    blackboard.state.register_key(key="is_docked", access=py_trees.common.Access.WRITE)
+    blackboard.state.is_docked = True
+
     blackboard.perception = py_trees.blackboard.Client(name="Perception")
     blackboard.perception.register_key(
         key="fiducials", access=py_trees.common.Access.WRITE
     )
+    blackboard.perception.fiducials = None
     blackboard.perception.register_key(
         key="world_objects", access=py_trees.common.Access.WRITE
     )
-    blackboard.perception.fiducials = None
     blackboard.perception.world_objects = None
 
     # Create and execute behavior tree

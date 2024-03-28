@@ -1,25 +1,25 @@
 """Robot Motion behaviors."""
+from __future__ import annotations
+
 import time
 
-from bosdyn.api import geometry_pb2
 from bosdyn.api.basic_command_pb2 import RobotCommandFeedbackStatus
 from bosdyn.api.spot import robot_command_pb2
-from bosdyn.client.frame_helpers import get_a_tform_b
-from bosdyn.client.frame_helpers import get_vision_tform_body
-from bosdyn.client.frame_helpers import VISION_FRAME_NAME
-from bosdyn.client.robot_command import RobotCommandBuilder
-from bosdyn.client.robot_command import RobotCommandClient
+from bosdyn.client.frame_helpers import (
+    get_a_tform_b,
+    get_vision_tform_body,
+    VISION_FRAME_NAME,
+    ODOM_FRAME_NAME,
+)
+from bosdyn.client.robot_command import RobotCommandBuilder, RobotCommandClient
 from bosdyn.client.robot_state import RobotStateClient
 
 import numpy as np
 
 import py_trees
 
-from spot_bt.data import Blackboards
-from spot_bt.data import BodyTrajectory
-from spot_bt.data import Pose
-from spot_bt.utils import get_desired_angle
-from spot_bt.utils import get_default_mobility_parameters
+from spot_bt.data import Blackboards, BodyTrajectory, Pose
+from spot_bt.utils import get_desired_angle, get_default_mobility_parameters
 
 
 class MoveToFiducial(py_trees.behaviour.Behaviour):
@@ -33,6 +33,10 @@ class MoveToFiducial(py_trees.behaviour.Behaviour):
         self.cmd_id = None
         self.dock_id = None
         self.state = None
+
+    def setup(self, **kwargs):
+        """Setup MoveToFiducial behavior before initialization."""
+        self.logger.debug(f"  {self.name} [MoveToFiducial::setup()]")
 
     def initialise(self):
         """Initialize robot and client objects for behavior on first tick."""
@@ -59,6 +63,7 @@ class MoveToFiducial(py_trees.behaviour.Behaviour):
 
     def update(self) -> py_trees.common.Status:
         """Run the MoveToFiducial behavior when ticked."""
+        # pylint: disable=no-member
         self.logger.debug(f"  {self.name} [MoveToFiducial::update()]")
         if self.cmd_id is None:
             if len(self.fiducials) > 1:
@@ -126,7 +131,7 @@ class MoveToFiducial(py_trees.behaviour.Behaviour):
     def terminate(self, new_status: str):
         """Terminate behavior and save information."""
         self.logger.debug(
-            f" {self.name} [MoveToFiducial::terminate().terminate()]" +
+            f" {self.name} [MoveToFiducial::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )
 
@@ -139,6 +144,10 @@ class TurnInPlace(py_trees.behaviour.Behaviour):
         self.client = {}
         self.pose: Pose = None
         self.cmd_id = None
+
+    def setup(self, **kwargs):
+        """Setup TurnInPlace behavior before initialization."""
+        self.logger.debug(f"  {self.name} [TurnInPlace::setup()]")
 
     def initialise(self):
         """Initialize robot and client objects for behavior on first tick."""
@@ -157,13 +166,15 @@ class TurnInPlace(py_trees.behaviour.Behaviour):
 
     def update(self) -> py_trees.common.Status:
         """Run the TurnInPlace behavior when ticked."""
+        # pylint: disable=no-member
         self.logger.debug(f"  {self.name} [TurnInPlace::update()]")
         try:
             if self.cmd_id is None:
                 transform = self.client["state"].get_robot_state().kinematic_state.transforms_snapshot
                 # TODO Need better way of inputing angle.
                 cmd = BodyTrajectory().create_rotation_trajectory_command(
-                    transform, 0, 0, 90
+                    # transform, 0, 0, 90
+                    transform, 90.0, ODOM_FRAME_NAME
                 )
                 # TODO Figure out a way to vary time depending on angle size.
                 self.cmd_id = self.client["command"].robot_command(
@@ -184,12 +195,12 @@ class TurnInPlace(py_trees.behaviour.Behaviour):
 
             return py_trees.common.Status.RUNNING
 
-        except:
+        except:  # pylint: disable=bare-except
             return py_trees.common.Status.FAILURE
 
     def terminate(self, new_status: str):
         """Terminate behavior and save information."""
         self.logger.debug(
-            f" {self.name} [TurnInPlace::terminate().terminate()]" +
+            f" {self.name} [TurnInPlace::terminate().terminate()]"
             f"[{self.status}->{new_status}]"
         )
